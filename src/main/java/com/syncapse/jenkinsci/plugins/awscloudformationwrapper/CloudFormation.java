@@ -188,9 +188,10 @@ public class CloudFormation {
         logger.println("Determining to create or update Cloud Formation stack: " + getExpandedStackName());
 
         try {
+            Stack stack = null;
             try {
                 DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(getExpandedStackName());
-                Stack stack = getStack(amazonClient.describeStacks(describeStacksRequest));
+                stack = getStack(amazonClient.describeStacks(describeStacksRequest));
             } catch (AmazonServiceException e) {
                 logger.println("Stack not found: " + getExpandedStackName() + ". Reason: " + detailedError(e));
             } catch (AmazonClientException e) {
