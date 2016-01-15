@@ -206,9 +206,18 @@ public class CloudFormation {
             else {
                 logger.println("Updating Cloud Formation stack: " + getExpandedStackName());
                 UpdateStackRequest updateRequest = updateStackRequest();
-                amazonClient.updateStack(updateRequest);
+                try {
+                    amazonClient.updateStack(updateRequest);
+                } catch (AmazonServiceException e) {
+                    if ("ValidationError".equals(e.getErrorCode()) && 
+                        e.getMessage().contains("No updates are to be performed")) {
+                         logger.println("No updates are to be performed");
+                    }
+                    else {
+                        throw e;
+                    }    
+                }
             }
-
 
             stack = waitForStackToBeCreated();
 
