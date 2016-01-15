@@ -427,7 +427,11 @@ public class CloudFormation {
 		UpdateStackRequest r = new UpdateStackRequest();
         r.withStackName(getExpandedStackName());
         r.withParameters(parameters);
-        r.withTemplateBody(recipe);
+        if (isRecipeURL) {
+            r.withTemplateURL(recipe);
+        } else {
+            r.withTemplateBody(recipe);
+        }
         r.withCapabilities("CAPABILITY_IAM");
 
         return r;
