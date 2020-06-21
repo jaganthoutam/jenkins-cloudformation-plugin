@@ -112,7 +112,7 @@ public class CloudFormationBuildStep extends Builder {
         recipe, postBuildStackBean.getParsedParameters(env),
         postBuildStackBean.getTimeout(), postBuildStackBean.getParsedAwsAccessKey(env),
         postBuildStackBean.getParsedAwsSecretKey(env),
-        postBuildStackBean.getAwsRegion(), env, false, postBuildStackBean.getSleep());
+        postBuildStackBean.getParsedAwsRegion(env), env, false, postBuildStackBean.getSleep());
 
   }
 
@@ -129,7 +129,7 @@ public class CloudFormationBuildStep extends Builder {
     @Override
     public String getDisplayName() {
 
-      return "AWS Cloud Formation";
+      return "AWS Cloud Formation (LPM)";
     }
 
     @Override
