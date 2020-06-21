@@ -1,170 +1,169 @@
 /**
- * 
+ *
  */
 package com.syncapse.jenkinsci.plugins.awscloudformationwrapper;
 
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
-import hudson.model.BuildListener;
-import hudson.model.Result;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
+import hudson.model.Result;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.kohsuke.stapler.DataBoundConstructor;
 
 /**
  * @author erickdovale
- * 
+ *
  */
 public class CloudFormationBuildWrapper extends BuildWrapper {
 
-	protected List<StackBean> stacks;
+  protected List<StackBean> stacks;
 
-	private transient List<CloudFormation> cloudFormations = new ArrayList<CloudFormation>();
+  private transient List<CloudFormation> cloudFormations = new ArrayList<CloudFormation>();
 
-	@DataBoundConstructor
-	public CloudFormationBuildWrapper(List<StackBean> stacks) {
-		this.stacks = stacks;
-	}
+  @DataBoundConstructor
+  public CloudFormationBuildWrapper(List<StackBean> stacks) {
+    this.stacks = stacks;
+  }
 
-	@Override
-	public void makeBuildVariables(AbstractBuild build,
-			Map<String, String> variables) {
+  @Override
+  public void makeBuildVariables(AbstractBuild build,
+      Map<String, String> variables) {
 
-		for (CloudFormation cf : cloudFormations) {
-			variables.putAll(cf.getOutputs());
-		}
+    for (CloudFormation cf : cloudFormations) {
+      variables.putAll(cf.getOutputs());
+    }
 
-	}
+  }
 
-	@Override
-	public Environment setUp(AbstractBuild build, Launcher launcher,
-			BuildListener listener) throws IOException, InterruptedException {
+  @Override
+  public Environment setUp(AbstractBuild build, Launcher launcher,
+      BuildListener listener) throws IOException, InterruptedException {
 
-        EnvVars env = build.getEnvironment(listener);
-        env.overrideAll(build.getBuildVariables());
-        
-        boolean success = true;
-        
-		for (StackBean stackBean : stacks) {
+    EnvVars env = build.getEnvironment(listener);
+    env.overrideAll(build.getBuildVariables());
 
-			final CloudFormation cloudFormation = newCloudFormation(stackBean,
-					build, env, listener.getLogger());
+    boolean success = true;
 
-			try {
-				if (cloudFormation.create()) {
-					cloudFormations.add(cloudFormation);
-					env.putAll(cloudFormation.getOutputs());
-				} else {
-					build.setResult(Result.FAILURE);
-					success = false;
-					break;
-				}
-			} catch (TimeoutException e) {
-				listener.getLogger()
-						.append("ERROR creating stack with name "
-								+ stackBean.getStackName()
-								+ ". Operation timedout. Try increasing the timeout period in your stack configuration.");
-				build.setResult(Result.FAILURE);
-				success = false;
-				break;
-			}
+    for (StackBean stackBean : stacks) {
 
-		}
-		
-		// If any stack fails to create then destroy them all
-		if (!success) {
-			doTearDown();
-			return null;
-		}
+      final CloudFormation cloudFormation = newCloudFormation(stackBean,
+          build, env, listener.getLogger());
 
-		return new Environment() {
-			@Override
-			public boolean tearDown(AbstractBuild build, BuildListener listener)
-					throws IOException, InterruptedException {
+      try {
+        if (cloudFormation.create()) {
+          cloudFormations.add(cloudFormation);
+          env.putAll(cloudFormation.getOutputs());
+        } else {
+          build.setResult(Result.FAILURE);
+          success = false;
+          break;
+        }
+      } catch (TimeoutException e) {
+        listener.getLogger()
+            .append("ERROR creating stack with name "
+                + stackBean.getStackName()
+                + ". Operation timedout. Try increasing the timeout period in your stack configuration.");
+        build.setResult(Result.FAILURE);
+        success = false;
+        break;
+      }
 
-				return doTearDown();
-				
-			}
+    }
 
-		};
-	}
-	
-	protected boolean doTearDown() throws IOException, InterruptedException{
-		boolean result = true;
+    // If any stack fails to create then destroy them all
+    if (!success) {
+      doTearDown();
+      return null;
+    }
 
-		List<CloudFormation> reverseOrder = new ArrayList<CloudFormation>(cloudFormations);
-		Collections.reverse(reverseOrder);
+    return new Environment() {
+      @Override
+      public boolean tearDown(AbstractBuild build, BuildListener listener)
+          throws IOException, InterruptedException {
 
-		for (CloudFormation cf : reverseOrder) {
-            // automatically delete the stack?
-            if (cf.getAutoDeleteStack()) {
-                // delete the stack
-                result = result && cf.delete();
-            }
-		}
+        return doTearDown();
 
-		return result;
-	}
+      }
 
-	protected CloudFormation newCloudFormation(StackBean stackBean,
-			AbstractBuild<?, ?> build, EnvVars env, PrintStream logger)
-			throws IOException {
+    };
+  }
 
-		Boolean isURL = false;
-		String recipe = null;
-		
-		if(CloudFormation.isRecipeURL(stackBean.getParsedCloudFormationRecipe(env))) {
-			isURL = true;
-			recipe = stackBean.getParsedCloudFormationRecipe(env);
-		} else {
-			recipe = build.getWorkspace().child(stackBean.getParsedCloudFormationRecipe(env)).readToString();
-		}
+  protected boolean doTearDown() throws IOException, InterruptedException {
+    boolean result = true;
 
-		return new CloudFormation(logger, stackBean.getStackName(), isURL,
-				recipe, stackBean.getParsedParameters(env),
-				stackBean.getTimeout(), stackBean.getParsedAwsAccessKey(env),
-				stackBean.getParsedAwsSecretKey(env),
-				stackBean.getAwsRegion(), stackBean.getAutoDeleteStack(), env,false);
+    List<CloudFormation> reverseOrder = new ArrayList<CloudFormation>(cloudFormations);
+    Collections.reverse(reverseOrder);
 
-	}
+    for (CloudFormation cf : reverseOrder) {
+      // automatically delete the stack?
+      if (cf.getAutoDeleteStack()) {
+        // delete the stack
+        result = result && cf.delete();
+      }
+    }
 
-	@Extension
-	public static class DescriptorImpl extends BuildWrapperDescriptor {
+    return result;
+  }
 
-		@Override
-		public String getDisplayName() {
-			return "Create AWS Cloud Formation stack";
-		}
+  protected CloudFormation newCloudFormation(StackBean stackBean,
+      AbstractBuild<?, ?> build, EnvVars env, PrintStream logger)
+      throws IOException {
 
-		@Override
-		public boolean isApplicable(AbstractProject<?, ?> item) {
-			return true;
-		}
-		
-	}
+    Boolean isURL = false;
+    String recipe = null;
 
-	public List<StackBean> getStacks() {
-		return stacks;
-	}
+    if (CloudFormation.isRecipeURL(stackBean.getParsedCloudFormationRecipe(env))) {
+      isURL = true;
+      recipe = stackBean.getParsedCloudFormationRecipe(env);
+    } else {
+      recipe = build.getWorkspace().child(stackBean.getParsedCloudFormationRecipe(env))
+          .readToString();
+    }
 
-	/**
-	 * @return
-	 */
-	private Object readResolve() {
-		// Initialize the cloud formation collection during deserialization to avoid NPEs. 
-		cloudFormations = new ArrayList<CloudFormation>();
-		return this;
-	}
-	
+    return new CloudFormation(logger, stackBean.getStackName(), isURL,
+        recipe, stackBean.getParsedParameters(env),
+        stackBean.getTimeout(), stackBean.getParsedAwsAccessKey(env),
+        stackBean.getParsedAwsSecretKey(env),
+        stackBean.getAwsRegion(), stackBean.getAutoDeleteStack(), env, false);
+
+  }
+
+  @Extension
+  public static class DescriptorImpl extends BuildWrapperDescriptor {
+
+    @Override
+    public String getDisplayName() {
+      return "Create AWS Cloud Formation stack";
+    }
+
+    @Override
+    public boolean isApplicable(AbstractProject<?, ?> item) {
+      return true;
+    }
+
+  }
+
+  public List<StackBean> getStacks() {
+    return stacks;
+  }
+
+  /**
+   * @return
+   */
+  private Object readResolve() {
+    // Initialize the cloud formation collection during deserialization to avoid NPEs.
+    cloudFormations = new ArrayList<CloudFormation>();
+    return this;
+  }
+
 }
