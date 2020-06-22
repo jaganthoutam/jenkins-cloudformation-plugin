@@ -65,7 +65,7 @@ public class CloudFormationNotifier extends Notifier {
       CloudFormation cloudFormation = new CloudFormation(listener.getLogger(),
           stack.getStackName(), false, "", new HashMap<String, String>(), 0,
           stack.getParsedAwsAccessKey(envVars), stack.getParsedAwsSecretKey(envVars),
-          stack.getAwsRegion(), false, envVars, stack.getIsPrefixSelected());
+          stack.getParsedAwsRegion(envVars), false, envVars, stack.getIsPrefixSelected());
 
       if (cloudFormation.delete()) {
         LOGGER.info("Success");

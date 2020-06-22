@@ -3,7 +3,7 @@
 
 	
 		<f:entry field="awsRegion" title="AWS Region">
-			<f:select />
+			<f:textbox />
 		</f:entry>
 		<f:entry title="Cloud Formation recipe file/S3 URL. (.json)" field="cloudFormationRecipe">
 			<f:textbox />

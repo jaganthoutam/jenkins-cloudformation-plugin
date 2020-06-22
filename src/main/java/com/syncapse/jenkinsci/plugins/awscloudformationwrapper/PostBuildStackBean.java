@@ -6,7 +6,6 @@ import hudson.model.AbstractDescribableImpl;
 import hudson.model.AbstractProject;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,12 +57,12 @@ public class PostBuildStackBean extends AbstractDescribableImpl<PostBuildStackBe
   private long sleep;
 
 
-  private Region awsRegion;
+  private String awsRegion;
 
   @DataBoundConstructor
   public PostBuildStackBean(String stackName, String description,
       String cloudFormationRecipe, String parameters, long timeout,
-      String awsAccessKey, String awsSecretKey, Region awsRegion, long sleep) {
+      String awsAccessKey, String awsSecretKey, String awsRegion, long sleep) {
     super();
     this.stackName = stackName;
     this.description = description;
@@ -109,7 +108,7 @@ public class PostBuildStackBean extends AbstractDescribableImpl<PostBuildStackBe
   }
 
 
-  public Region getAwsRegion() {
+  public String getAwsRegion() {
     return awsRegion;
   }
 
@@ -148,6 +147,10 @@ public class PostBuildStackBean extends AbstractDescribableImpl<PostBuildStackBe
 
   public String getParsedCloudFormationRecipe(EnvVars env) {
     return env.expand(getCloudFormationRecipe());
+  }
+
+  public String getParsedAwsRegion(EnvVars env) {
+    return env.expand(getAwsRegion());
   }
 
   @Extension
@@ -220,6 +223,34 @@ public class PostBuildStackBean extends AbstractDescribableImpl<PostBuildStackBe
       return FormValidation.ok();
     }
 
+    private Boolean isRegionValid(String region) {
+      try {
+        if (Region.valueOf(region.toUpperCase().replace("-", "_")) != null) {
+
+        }
+      } catch (IllegalArgumentException iae) {
+        return false;
+      }
+
+      return true;
+    }
+
+    public FormValidation doCheckAwsRegion(
+        @AncestorInPath AbstractProject<?, ?> project,
+        @QueryParameter String value) throws IOException {
+      if (0 == value.length()) {
+        return FormValidation.error("Empty aws region");
+      }
+
+      if (isRegionValid(value) || value.equalsIgnoreCase("${REGION}") || value
+          .equalsIgnoreCase("${AWS_REGION}") || value.equalsIgnoreCase("${STACK_REGION}")) {
+        return FormValidation.ok();
+      } else {
+        return FormValidation.error("Invalid aws region");
+      }
+    }
+
+    /*
     public ListBoxModel doFillAwsRegionItems() {
       ListBoxModel items = new ListBoxModel();
       for (Region region : Region.values()) {
@@ -227,6 +258,7 @@ public class PostBuildStackBean extends AbstractDescribableImpl<PostBuildStackBe
       }
       return items;
     }
+    */
 
   }
 

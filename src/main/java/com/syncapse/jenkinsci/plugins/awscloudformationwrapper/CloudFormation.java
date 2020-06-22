@@ -72,6 +72,24 @@ public class CloudFormation {
   private Map<String, String> outputs;
   private long sleep = 0;
 
+  private Region getAWSCFRegion(String region) {
+    logger.println("region in getAWSCFRegion = " + region);
+
+    if (region == null) {
+      return Region.getDefault();
+    }
+
+    try {
+      if (Region.valueOf(region.toUpperCase().replace("-", "_")) != null) {
+        return Region.valueOf(region.toUpperCase().replace("-", "_"));
+      }
+    } catch (IllegalArgumentException iae) {
+      return Region.getDefault();
+    }
+
+    return Region.getDefault();
+  }
+
   /**
    * @param logger a logger to write progress information.
    * @param stackName the name of the stack as defined in the AWS
@@ -88,7 +106,7 @@ public class CloudFormation {
    */
   public CloudFormation(PrintStream logger, String stackName, Boolean isRecipeURL,
       String recipeBody, Map<String, String> parameters,
-      long timeout, String awsAccessKey, String awsSecretKey, Region region,
+      long timeout, String awsAccessKey, String awsSecretKey, String region,
       boolean autoDeleteStack, EnvVars envVars, Boolean isPrefixSelected) {
 
     this.logger = logger;
@@ -98,7 +116,7 @@ public class CloudFormation {
     this.parameters = parameters(parameters);
     this.awsAccessKey = awsAccessKey;
     this.awsSecretKey = awsSecretKey;
-    this.awsRegion = region != null ? region : Region.getDefault();
+    this.awsRegion = getAWSCFRegion(region);
     this.isPrefixSelected = isPrefixSelected;
 
     if (timeout == -12345) {
@@ -113,7 +131,7 @@ public class CloudFormation {
 
   public CloudFormation(PrintStream logger, String stackName, Boolean isRecipeURL,
       String recipeBody, Map<String, String> parameters,
-      long timeout, String awsAccessKey, String awsSecretKey, Region region,
+      long timeout, String awsAccessKey, String awsSecretKey, String region,
       boolean autoDeleteStack, EnvVars envVars, Boolean isPrefixSelected, long sleep) {
 
     this.logger = logger;
@@ -123,7 +141,7 @@ public class CloudFormation {
     this.parameters = parameters(parameters);
     this.awsAccessKey = awsAccessKey;
     this.awsSecretKey = awsSecretKey;
-    this.awsRegion = region != null ? region : Region.getDefault();
+    this.awsRegion = getAWSCFRegion(region);
     this.isPrefixSelected = isPrefixSelected;
     if (timeout == -12345) {
       this.timeout = 0; // Faster testing.
@@ -266,6 +284,10 @@ public class CloudFormation {
         this.awsSecretKey);
     AmazonCloudFormation amazonClient = new AmazonCloudFormationAsyncClient(
         credentials);
+
+    logger.println("getAWSClient awsRegion.readableName = " + awsRegion.readableName);
+    logger.println("getAWSClient awsRegion.endpoint = " + awsRegion.endPoint);
+
     amazonClient.setEndpoint(awsRegion.endPoint);
     return amazonClient;
   }

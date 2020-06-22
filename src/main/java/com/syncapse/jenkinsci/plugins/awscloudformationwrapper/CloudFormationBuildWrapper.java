@@ -136,7 +136,7 @@ public class CloudFormationBuildWrapper extends BuildWrapper {
         recipe, stackBean.getParsedParameters(env),
         stackBean.getTimeout(), stackBean.getParsedAwsAccessKey(env),
         stackBean.getParsedAwsSecretKey(env),
-        stackBean.getAwsRegion(), stackBean.getAutoDeleteStack(), env, false);
+        stackBean.getParsedAwsRegion(env), stackBean.getAutoDeleteStack(), env, false);
   }
 
   @Extension
@@ -144,7 +144,7 @@ public class CloudFormationBuildWrapper extends BuildWrapper {
 
     @Override
     public String getDisplayName() {
-      return "Create AWS Cloud Formation stack";
+      return "Create AWS Cloud Formation stack (LPM)";
     }
 
     @Override

@@ -103,7 +103,8 @@ public class CloudFormationPostBuildNotifier extends Notifier {
         recipe, postBuildStackBean.getParsedParameters(env),
         postBuildStackBean.getTimeout(), postBuildStackBean.getParsedAwsAccessKey(env),
         postBuildStackBean.getParsedAwsSecretKey(env),
-        postBuildStackBean.getAwsRegion(), false, env, false, postBuildStackBean.getSleep());
+        postBuildStackBean.getParsedAwsRegion(env), false, env, false,
+        postBuildStackBean.getSleep());
 
   }
 
@@ -120,7 +121,7 @@ public class CloudFormationPostBuildNotifier extends Notifier {
     @Override
     public String getDisplayName() {
 
-      return "AWS Cloud Formation";
+      return "AWS Cloud Formation (LPM)";
     }
 
     @Override
