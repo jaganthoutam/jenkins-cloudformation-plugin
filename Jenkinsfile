@@ -8,7 +8,7 @@ pipeline {
   stages {
     stage('Build') {
       steps {
-        sh 'mvn package'
+        sh 'mvn release:prepare'
       }
     }
   }
