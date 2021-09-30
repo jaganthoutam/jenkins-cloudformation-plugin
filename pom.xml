@@ -11,6 +11,8 @@
   </parent>
 
   <packaging>hpi</packaging>
+    <artifactId>jenkins-test-plugin-lpm</artifactId>
+
   <version>1.2</version>
   
   <licenses>
