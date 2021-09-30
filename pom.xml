@@ -12,6 +12,9 @@
 
   <packaging>hpi</packaging>
 
+   <artifactId>jenkins-cloudformation-plugin-lpm</artifactId>
+  <version>1.2</version>
+  
   <licenses>
     <license>
       <name>MIT license</name>
